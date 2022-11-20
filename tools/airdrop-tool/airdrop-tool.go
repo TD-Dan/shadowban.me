@@ -13,6 +13,7 @@ import (
 	"time"
 
 	twitter "github.com/g8rswimmer/go-twitter/v2"
+	dotenv "github.com/joho/godotenv"
 	//client "github.com/iotaledger/goshimmer/client"
 )
 
@@ -24,10 +25,19 @@ func (a authorize) Add(req *http.Request) {
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", a.Token))
 }
 
+// init is invoked before main()
+func init() {
+	// loads values from .env into the system
+	if err := dotenv.Load(); err != nil {
+		log.Print("No .env file found")
+	}
+}
+
 /*
 *
 
 	In order to run, the user will need to provide the bearer token and the list of tweet ids.
+	Bearer token can optianally be defined in the .env file
 
 *
 */
@@ -37,6 +47,17 @@ func main() {
 	ids := flag.String("ids", "", "tweet id(s)")
 	token := flag.String("token", "", "twitter API token")
 	flag.Parse()
+
+	// If no token was provided try to use one defined in .env
+	if *token == "" {
+		envtoken, exists := os.LookupEnv("TOKEN")
+		if exists {
+			if envtoken != "REPLACE_WITH_YOUR_TWITTER_API_TOKEN" {
+				fmt.Println("TOKEN found in environment.")
+				*token = envtoken
+			}
+		}
+	}
 
 	if *help || *tool == "" {
 		fmt.Printf("\nUsage: -tool <tool> -<tool parameters>")
@@ -59,8 +80,12 @@ func main() {
 func gettweets(ids string, token string) {
 	fmt.Printf("Fetching tweets %s...\n", ids)
 
+	if token == "" {
+		log.Panic("token from .env OR -token argument missing")
+	}
+
 	if token == "" || ids == "" {
-		log.Panicf("id and token arguments missing")
+		log.Panic("-ids argument missing")
 	}
 
 	client := &twitter.Client{
@@ -94,8 +119,12 @@ func gettweets(ids string, token string) {
 func getcomments(ids string, token string) {
 	fmt.Printf("Fetching comments for %s...\n", ids)
 
+	if token == "" {
+		log.Panic("token from .env OR -token argument missing")
+	}
+
 	if token == "" || ids == "" {
-		log.Panicf("ids and token arguments missing")
+		log.Panic("-ids argument missing")
 	}
 
 	client := &twitter.Client{
