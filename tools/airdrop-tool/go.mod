@@ -1,4 +1,4 @@
-module shadowban.me/airdrop-tool
+module github.com/shadowban.me/airdrop-tool
 
 go 1.19
 
