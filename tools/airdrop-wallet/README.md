@@ -1,5 +1,5 @@
-# airdrop-tool
+# airdrop-wallet
 tool to airdrop huge amounts of shimmies/tokens to multiple addresses
 
-wallet-create
-	create airdrop wallet
+## wallet-create
+create airdrop wallet
