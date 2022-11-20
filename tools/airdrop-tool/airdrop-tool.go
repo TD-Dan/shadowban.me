@@ -13,6 +13,7 @@ import (
 	"time"
 
 	twitter "github.com/g8rswimmer/go-twitter/v2"
+	//client "github.com/iotaledger/goshimmer/client"
 )
 
 type authorize struct {
