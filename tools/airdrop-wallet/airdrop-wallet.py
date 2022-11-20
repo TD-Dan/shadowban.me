@@ -56,9 +56,12 @@ match args.tool:
         # mnemonic (seed) should be set only for new storage
         # once the storage has been initialized earlier then you should omit this step
         # Store the mnemonic in the Stronghold snapshot, this only needs to be done once
-        account = wallet.store_mnemonic()
+        seed = wallet.generate_mnemonic()
+        print(seed)
+        account = wallet.store_mnemonic(seed)
         account = wallet.create_account('Airdrop')
-        print("Created account: " + account)
+        print("Created account:")
+        print(account)
     case _:
         print(args.tool + " is not a tool")
 
