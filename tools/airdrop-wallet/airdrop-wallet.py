@@ -30,8 +30,8 @@ def main():
 
     # print("Argument values:")
     print("Using tool: " + args.tool)
-    print(args.input)
-    print(args.out)
+    #print(args.input)
+    #print(args.out)
     # print(args.switch)
 
 
@@ -59,6 +59,8 @@ def main():
     match args.tool:
         case "addresses-get":
             in_file = args.input
+            out_file = args.out
+            addresses = []
             if in_file == None:
                 print("no input file specied: trying default 'comments.json'")
                 in_file = "comments.json"
@@ -66,7 +68,14 @@ def main():
             f = open(in_file, encoding='utf8')
             if in_file.endswith(".json"):
                 data = json.load(f)
-                look_thru(data)
+                addresses = look_thru(data)
+            if len(addresses) > 0:
+                print("Found "+len(addresses)+" addresses")
+                if out_file == None:
+                    print("no input file specied: using default 'addresses.txt'")
+                    out_file = "addresses.txt"
+            
+                
         case "wallet-create":
             # mnemonic (seed) should be set only for new storage
             # once the storage has been initialized earlier then you should omit this step
@@ -81,16 +90,22 @@ def main():
             print(args.tool + " is not a tool")
 
 def look_thru(data):
-    print("looking thru data...")
-    for v in data:
-        print(v)
-        if v is dict:
-            look_thru(v)
-        if v is str:
-            print(str)
-            if str.startswith("smr1"):
-                print(str)
-    return
+    #print("looking thru data...")
+    found = []
+    for k, v in data.items():
+        #print(v)
+        #if v is dict:
+        if hasattr(v, "items"):
+            subfound = look_thru(v)
+            found += subfound
+        if k == "text" and isinstance(v, str):
+             #print(v)
+             words = v.split()
+             for w in words:
+                if w.startswith("smr1"):
+                    #print(w)
+                    found.append(w)
+    return found
 
 if __name__ == "__main__":
     main()
