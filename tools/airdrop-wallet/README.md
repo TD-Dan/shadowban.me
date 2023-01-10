@@ -39,6 +39,8 @@ Claims **all** unclaimed tokens that have been sent to this airdrop wallet
 
 Sends out **amount** to **input** address list
 
+After the file is processed or if process is interrupted two files will be written: results-success.txt and results-fail.txt. These files contain smr addresses of successfull and failed sends
+
 #### Examples:
 
 <code>python airdrop-wallet.py wallet-airdrop --input my_address_list.txt --amount 123000 </code>
@@ -48,7 +50,7 @@ Token id needs to be specified in .env file.
 
 <code>python airdrop-wallet.py wallet-airdrop --input --amount SMR1234000 </code>
 
-Sends 1.234000 SMR (1234000glow) to each smr address in the default addresses.txt file.
+Sends 1.234 SMR (1234000glow) to each smr address in the default addresses.txt file.
 File needs to be one smr address per line.
 Token id needs to be specified in .env file.
 
@@ -58,3 +60,11 @@ Token id needs to be specified in .env file.
 <code>python airdrop-wallet.py addresses-get [--input comments.json] [--output addresses.txt]</code>
 
 Reads in twitter comments from .json file and outputs an .txt file with each found unique smr address per line
+
+
+
+## Tips
+
+- if the process takes too long or keeps giving errors you can use ctrl-c to stop
+- 'no inputs found'/'the wallet account does not have enough native tokens' errors can be fixed by feeding the airdrop wallet with funds (both SMR and Tokens) in many smaller batches
+- use <code>python airdrop-wallet.py wallet-airdrop --input result-failed.txt --amount 123000 </code> to rerun failed sends
