@@ -5,13 +5,17 @@ import json
 import pprint
 
 from iota_wallet import IotaWallet, StrongholdSecretManager
+from iota_client import IotaClient
 from dotenv import load_dotenv
+
+from colorama import Fore, Back, Style, init
+init(autoreset=True)
 
 
 def main():
     ## Get commandline arguments
     parser = argparse.ArgumentParser(prog='airdrop-wallet', description='shadowban.me airdrop tool')
-    parser.add_argument('tool', type=str,
+    parser.add_argument('--tool', type=str,
                         help='Tool to use: wallet-create, wallet-status, wallet-claim-all\n wallet-airdrop \naddresses-get')
     parser.add_argument('--input', type=str,
                         help='Filename of input file')
@@ -30,10 +34,26 @@ def main():
     TOKEN_ID = os.getenv('TOKEN_ID')
     DELAY_SECONDS = float(os.getenv('DELAY_SECONDS'))
     EXPIRATION_SECONDS = int(os.getenv('EXPIRATION_SECONDS'))
+    NODES = os.getenv('NODES')
+
+    ## Setup client
+
+    print(Back.GREEN + 'Opening client...', end='')
+    
+    try:
+        client = IotaClient({'nodes': ['https://api.testnet.shimmer.network']})
+        node_info = client.get_info()
+        if "type" in node_info:
+            raise RuntimeError(node_info["type"])
+
+        print("\t" + Back.GREEN + 'OK')
+    except Exception as e:
+        print("\t" + Back.RED + 'FAIL')
+        raise
 
     ## Setup wallet
 
-    print("Opening wallet...")
+    print(Back.GREEN + "Opening wallet...", end='')
 
     wallet_options = {
         'nodes': ['https://api.shimmer.network'],
@@ -45,6 +65,8 @@ def main():
     secret_manager = StrongholdSecretManager("wallet.stronghold", STRONGHOLD_PASSWORD)
 
     wallet = IotaWallet('./_airdrop-database', wallet_options, coin_type, secret_manager)
+
+    print("\t" + Back.GREEN + 'OK')
 
 
     print("Using tool: " + args.tool)
@@ -75,7 +97,11 @@ def main():
                         f.write(line+"\n")
             else:
                 print("No addresses found in file!")
-
+        case "node-info":
+            # Get the node info
+            node_info = client.get_info()
+            pprint.pprint(f'{node_info}')
+            
         case "wallet-create":
             # mnemonic (seed) should be set only for new storage
             # once the storage has been initialized earlier then you should omit this step
@@ -86,7 +112,7 @@ def main():
             account = wallet.create_account('Airdrop')
             print("Created account:")
             print(account)
-        
+
         case "wallet-status":
             account = wallet.get_account('Airdrop')
             
