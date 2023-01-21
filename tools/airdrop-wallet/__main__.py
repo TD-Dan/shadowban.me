@@ -9,13 +9,28 @@ from iota_client import IotaClient
 from colorama import Fore, Back, Style, init, Cursor
 init(autoreset=True)
 
-all_tools = {}
+menu_tools = {}
+at_tools = {}
 
-def add_tool(fn: callable,short_command:str,long_command:str):
-    all_tools[(short_command,long_command)]=fn
+def add_menu_tool(tool: object):
+    menu_tools[(tool.short,tool.long)]=tool
+
+def add_tool(tool: object):
+    # Check that tool keywords are not used by menu level commands or other tool commands
+    for s,l in menu_tools | at_tools:
+        if tool.short == s:
+            raise ValueError("shorthand already in use by "+s+" "+l)
+        if tool.long == l:
+            raise ValueError("tool long keyword already in use by "+s+" "+l)
+    at_tools[(tool.short,tool.long)]=tool
 
 from tools.config import ConfigTool
-add_tool(ConfigTool(),'c','config')
+add_tool(ConfigTool())
+from tools.airdrop import AirdropTool
+add_tool(AirdropTool())
+
+# Used to signal main loop continue
+class InputUsedContinueLoop(Exception): pass
 
 def main():
 
@@ -23,25 +38,46 @@ def main():
 
     print('\nType ' + Fore.LIGHTWHITE_EX + 'help' + Fore.RESET +' for available commands.\nUse Ctrl-C anytime to abort current command.\n')
 
+    current_tool = None
+
     while True:
-        try:
-            
+        try:            
             #print(Cursor.UP(1) + '\33[2K\rA-T>', end='') #\33[2K = erase line, \r = return to line beginning
-            print('loading..') #\33[2K = erase line, \r = return to line beginning
+            print('                        ') #print empty line to avoid screen jumping
             print(Cursor.UP(1)+"", end='')
-            
-            print('\33[2K\r'+Back.LIGHTBLACK_EX+Fore.BLACK+'A-T>'+Fore.RESET+Back.RESET, end='') #\33[2K = erase line, \r = return to line beginning
+            current_tool_str = ""
+            if current_tool:
+                current_tool_str = Back.GREEN+current_tool.long+'>'+Back.RESET
+            print('\33[2K\r'+Back.LIGHTBLACK_EX+Fore.BLACK+'A-T>'+current_tool_str+Fore.RESET+Back.RESET, end='') #\33[2K = erase line, \r = return to line beginning
             try:
                 user_input = input()
                 print(Cursor.UP(1)+"", end='')
-                for short, long in all_tools:
-                    if user_input.casefold() == short or user_input.casefold() == long:
-                        print('>>> '+long)
-                        all_tools[(short,long)]()
+                input_words = user_input.split(" ")
+                for (short,long),tool in menu_tools.items():
+                    if input_words[0].casefold() == short or input_words[0].casefold() == long:
+                        print('\33[2K\r> '+long)
+                        menu_tools[(short,long)](*input_words[1:])
+                        raise InputUsedContinueLoop
+                if not current_tool:
+                    for (short,long),tool in at_tools.items():
+                        if input_words[0].casefold() == short or input_words[0].casefold() == long:
+                            current_tool = tool
+                            print('\33[2K\r>>> '+long)
+                            at_tools[(short,long)](*input_words[1:])
+                else:
+                    #reroute input to current tool
+                    current_tool(*input_words)
+            except InputUsedContinueLoop:
+                pass
             except KeyboardInterrupt:
-                exit_command()
+                if current_tool:
+                    BackCommand()()
+                else:
+                    ExitCommand()()
         except KeyboardInterrupt:
             pass
+        except ProgramBack:
+            current_tool = None
         except ProgramExit:
             print(Fore.LIGHTBLACK_EX + 'Normal program exit')
             exit()
@@ -53,22 +89,59 @@ def main():
 class ProgramExit(Exception):
     pass
 
-"""Exits the program."""
-def exit_command():
-    if prompt_yes_no("Exit?"):
-        raise ProgramExit
-add_tool(exit_command,'x','exit')
+class ExitCommand:
+    short = 'x'
+    long = 'exit'
+    def __call__(self,*args):
+        if prompt_yes_no("Exit?"):
+            raise ProgramExit
+add_menu_tool(ExitCommand())
 
-"""Displays available commands."""
-def help_command():
-    print("Available commands:")
-    for (short,long),tool in all_tools.items():
-        print('\t'+short+' - '+long+'\t',end='')
-        try:
-            print(tool.help())
-        except AttributeError:
-            print("-")
-add_tool(help_command,'h','help')
+
+class ProgramBack(Exception):
+    pass
+
+class BackCommand:
+    short = 'b'
+    long = 'back'
+    def __call__(self,*args):
+        raise ProgramBack
+add_menu_tool(BackCommand())
+
+class HelpCommand:
+    short = 'h'
+    long = 'help'
+    help = 'Displays context sensitive help.'
+    def __call__(self,*args):
+        if len(args)>0:
+            for (short,long),tool in menu_tools.items()|at_tools.items():
+                if args[0].casefold() == short or args[0].casefold() == long:
+                    try:
+                        print("\tcommand:\t"+tool.long)
+                        print("\tshortcut:\t"+tool.short)
+                        print(tool.help)
+                        print(tool.help_long)
+                    except AttributeError:
+                        pass
+            return
+
+        print("Commands available everywhere:")
+        for (short,long),tool in menu_tools.items():
+            print('\t'+short+' - '+long+'\t',end='')
+            try:
+                print(tool.help)
+            except AttributeError:
+                print("")
+        print("Tools:")
+        for (short,long),tool in at_tools.items():
+            print('\t'+short+' - '+long+'\t',end='')
+            try:
+                print(tool.help)
+            except AttributeError:
+                print("")
+        print("\nUse help <tool> for more help.\n")
+add_menu_tool(HelpCommand())
+
 
 """Prompts an yes or no input from user."""
 def prompt_yes_no(prompt: str) -> bool:

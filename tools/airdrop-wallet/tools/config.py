@@ -9,8 +9,9 @@ default_configuration = {
 }
 
 class ConfigTool:
-    def __call__(self):
-        print("Hello, I am a config.")
-    
-    def help(self) -> str:
-        return "Manage program configuration."
+    short = 'c'
+    long = 'config'
+    help = 'Manage program configuration.'
+    help_long = 'Manage settings that are used by all tools, like network and wallet preferences.'
+    def __call__(self,*args):
+        print("Henlo, I am config. I received "+ str(args))
