@@ -1,22 +1,19 @@
-import os
-import time
-import json
-import pprint
 
 from iota_wallet import IotaWallet, StrongholdSecretManager
 from iota_client import IotaClient
 
-from window.termwindow import TerminalWindow
+#from window.termwindow import TerminalWindow
+import shadowui
+import termwindow
 
 from tools.config import ConfigTool
 from tools.airdrop import AirdropTool
 
 
 def main():
-    mainwin = TerminalWindow()
+    mainwin = termwindow.TerminalWindow()
 
-    mainwin.program_name = 'Shadow-wallet'
-    mainwin.program_version = 'v.0.1.1'
+    mainwin.name = 'Shadow-wallet'
 
     config_tool = ConfigTool()
     airdrop_tool = AirdropTool()
@@ -24,6 +21,8 @@ def main():
     mainwin.add_tool(config_tool)
     mainwin.add_tool(airdrop_tool)
 
+    header = shadowui.Section()
+    mainwin.sections.append(header)
     mainwin.open()
 
 

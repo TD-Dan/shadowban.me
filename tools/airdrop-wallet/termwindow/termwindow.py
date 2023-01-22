@@ -7,8 +7,9 @@ from queue import Queue
 from colorama import Fore, Back, Style, init, Cursor
 init(autoreset=True)
 
-from window.windowbase import WindowBase
-
+#from shadowui.windowbase import WindowBase
+#from shadowui.section import Section
+import shadowui
 
 # Used to signal main loop continue
 class InputUsedContinueLoop(Exception): pass
@@ -32,7 +33,7 @@ class UiColor:
 Color = UiColor()
 
 
-class TerminalWindow(WindowBase):
+class TerminalWindow(shadowui.WindowBase):
     
     input_queue = Queue()
     menu_tools = {}
@@ -56,7 +57,7 @@ class TerminalWindow(WindowBase):
         self.clear(Color.bg_dark, Rect(1,1,80,1))
         self.clear(Color.bg_medium, Rect(1,2,80,4))
 
-        self.text(1, 1, ' '+ self.program_name+" "+self.program_version+' ', Color.text_bold, Color.bg_dark)
+        self.text(1, 1, ' '+ self.name+' ', Color.text_bold, Color.bg_dark)
         
         self.text(8,3,Color.text_normal + 'Type ' + Color.text_bold + 'help' + Color.text_normal +' for available commands.',back_color=Color.bg_light)
         self.text(8,4,'Use Ctrl-C anytime to abort current command.',Color.text_faded, Color.bg_light)
@@ -133,7 +134,7 @@ class TerminalWindow(WindowBase):
     """Initialize terminal view"""
     def init(self):
         #set title
-        print('\033]2;'+self.program_name+'\a')
+        print('\033]2;'+self.name+'\a')
         # Pre-fill with empty lines
         for n in range(1,25):
             print("")
