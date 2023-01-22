@@ -29,12 +29,16 @@ class TerminalScreen(Screen):
         self.at_tools[(tool.short,tool.long)]=tool
      
     def open(self):
-        
-        print('\033[2J',end='') #clear screen
-        
-        print(Back.WHITE + Fore.BLACK + ' AIRDROP TOOL v.0.1.1 ')
-        print('\nType ' + Fore.LIGHTWHITE_EX + 'help' + Fore.RESET +' for available commands.\nUse Ctrl-C anytime to abort current command.\n')
+        self.init()
+        self.clear()
+        self.clear(Back.WHITE, Rect(1,1,80,1))
+        self.clear(Back.LIGHTBLACK_EX, Rect(1,2,80,4))
 
+        self.text(1, 1, ' '+ self.program_name+" "+self.program_version, Fore.BLACK, Back.WHITE)
+        
+        self.text(1, 1, ' '+ self.program_name+" "+self.program_version, Fore.BLACK, Back.WHITE)
+        self.text(8,3,'Type ' + Fore.LIGHTWHITE_EX + 'help' + Fore.RESET +' for available commands.')
+        self.text(8,4,'Use Ctrl-C anytime to abort current command.')
 
         self.add_menu_tool(ExitCommand())
         self.add_menu_tool(BackCommand())
@@ -44,16 +48,15 @@ class TerminalScreen(Screen):
 
         while True:
             try:            
-                
-                print('\033[2K') #print empty line to avoid screen jumping
-                print(Cursor.UP(1)+"", end='')
                 current_tool_str = ""
                 if current_tool:
                     current_tool_str = Back.GREEN+current_tool.long+'>'+Back.RESET
-                print('\33[2K\r'+Back.LIGHTBLACK_EX+Fore.BLACK+'A-T>'+current_tool_str+Fore.RESET+Back.RESET, end='') #\33[2K = erase line, \r = return to line beginning
+                self.clear(rect=Rect(1,6,80,1))
+                self.text(1,6,Back.LIGHTBLACK_EX+Fore.BLACK+'A-T>'+current_tool_str)
+                #print('\33[2K\r'+Back.LIGHTBLACK_EX+Fore.BLACK+'A-T>'+current_tool_str+Fore.RESET+Back.RESET, end='') #\33[2K = erase line, \r = return to line beginning
                 try:
                     user_input = input()
-                    print(Cursor.UP(1)+"", end='')
+                    #print(Cursor.UP(1)+"", end='')
                     input_words = user_input.split(" ")
                     for (short,long),tool in self.menu_tools.items():
                         if input_words[0].casefold() == short or input_words[0].casefold() == long:
@@ -87,6 +90,45 @@ class TerminalScreen(Screen):
                 print("Unhandled exception")
                 raise
 
+
+    """Initialize terminal view"""
+    def init(self):
+        #set title
+        print('\033]2;'+self.program_name+'\a')
+        # Pre-fill with empty lines
+        for n in range(1,25):
+            print("")
+        #reset cursor position
+        print(Cursor.POS(1,1)+"", end='')
+
+    """Empty terminal view"""
+    def clear(self,bg_color = Back.RESET, rect = None, ):
+        if rect:
+            for y in range(0, rect.h):
+                self.text(rect.x,rect.y+y,' '*rect.w,Fore.RESET, bg_color)
+                    
+        else:
+            print(bg_color+'\033[2J',end='') #clear whole screen
+
+    """Print text at specified position"""
+    def text(self,x,y,text,fore_color=Fore.RESET,back_color=Back.RESET):
+        print(Cursor.POS(x,y)+fore_color+back_color+text, end='')
+
+    """Empty terminal view"""
+    def cursor_pos(self,x,y):
+        print(Cursor.POS(x,y)+"", end='')
+
+class Rect:
+    x = 1
+    y = 1
+    w = 1
+    h = 1
+    def __init__(self,x,y,w,h) -> None:
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+        
 
 class ExitCommand:
     short = 'x'

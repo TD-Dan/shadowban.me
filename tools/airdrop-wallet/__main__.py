@@ -15,7 +15,7 @@ from tools.airdrop import AirdropTool
 def main():
     scr = TerminalScreen()
 
-    scr.program_name = 'Airdrop wallet'
+    scr.program_name = 'Shadow-wallet'
     scr.program_version = 'v.0.1.1'
 
     config_tool = ConfigTool()
