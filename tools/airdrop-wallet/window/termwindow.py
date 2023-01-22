@@ -1,8 +1,14 @@
+
+import sys
+import threading
+import time
+from queue import Queue
+
 from colorama import Fore, Back, Style, init, Cursor
 init(autoreset=True)
 
+from window.windowbase import WindowBase
 
-from screen import Screen
 
 # Used to signal main loop continue
 class InputUsedContinueLoop(Exception): pass
@@ -11,8 +17,24 @@ class ProgramExit(Exception): pass
 # Used to signal back to previous menu level
 class ProgramBack(Exception): pass
 
-class TerminalScreen(Screen):
+class UiColor:
+    bg_dark = Back.BLACK
+    bg_medium = Back.BLUE
+    bg_light = Back.CYAN
+    bg_accent = Back.LIGHTCYAN_EX
+    bg_alert = Back.RED
+    text_bold = Fore.LIGHTWHITE_EX
+    text_normal = Fore.WHITE
+    text_faded = Fore.BLACK
+    text_accent = Fore.LIGHTCYAN_EX
+    text_alert = Fore.LIGHTRED_EX
+    text_as_bg = Fore.BLACK
+Color = UiColor()
+
+
+class TerminalWindow(WindowBase):
     
+    input_queue = Queue()
     menu_tools = {}
     at_tools = {}
 
@@ -31,32 +53,49 @@ class TerminalScreen(Screen):
     def open(self):
         self.init()
         self.clear()
-        self.clear(Back.WHITE, Rect(1,1,80,1))
-        self.clear(Back.LIGHTBLACK_EX, Rect(1,2,80,4))
+        self.clear(Color.bg_dark, Rect(1,1,80,1))
+        self.clear(Color.bg_medium, Rect(1,2,80,4))
 
-        self.text(1, 1, ' '+ self.program_name+" "+self.program_version, Fore.BLACK, Back.WHITE)
+        self.text(1, 1, ' '+ self.program_name+" "+self.program_version+' ', Color.text_bold, Color.bg_dark)
         
-        self.text(1, 1, ' '+ self.program_name+" "+self.program_version, Fore.BLACK, Back.WHITE)
-        self.text(8,3,'Type ' + Fore.LIGHTWHITE_EX + 'help' + Fore.RESET +' for available commands.')
-        self.text(8,4,'Use Ctrl-C anytime to abort current command.')
+        self.text(8,3,Color.text_normal + 'Type ' + Color.text_bold + 'help' + Color.text_normal +' for available commands.',back_color=Color.bg_light)
+        self.text(8,4,'Use Ctrl-C anytime to abort current command.',Color.text_faded, Color.bg_light)
+
+        self.text(70,2,' ▓█░   ',Color.text_as_bg, Color.bg_accent)
+        self.text(70,3,' █  ░▒ ',Color.text_as_bg, Color.bg_accent)
+        self.text(70,4,' ▒░  █ ',Color.text_as_bg, Color.bg_accent)
+        self.text(70,5,'   ░█▓ ',Color.text_as_bg, Color.bg_accent)
+
+
+        self.clear(Color.bg_dark, Rect(1,6,80,1))
+        self.text(1,6,Color.text_accent + Color.bg_dark+'SW>')
 
         self.add_menu_tool(ExitCommand())
         self.add_menu_tool(BackCommand())
         self.add_menu_tool(HelpCommand())
 
         current_tool = None
+        user_input=""
+        last_update = time.time()
 
         while True:
-            try:            
+            try:
+                time.sleep(0.1) # limit framerate
+                # if time.time()-last_update>0.5:
+                #     sys.stdout.write(".")
+                #     sys.stdout.flush()
+                #     last_update = time.time()
+
+                if not self.input_queue.empty():
+                    user_input=self.input_queue.get()
+
                 current_tool_str = ""
                 if current_tool:
-                    current_tool_str = Back.GREEN+current_tool.long+'>'+Back.RESET
-                self.clear(rect=Rect(1,6,80,1))
-                self.text(1,6,Back.LIGHTBLACK_EX+Fore.BLACK+'A-T>'+current_tool_str)
+                    current_tool_str = current_tool.long+'>'
+                #self.clear(Color.bg_dark, Rect(1,6,80,1))
+                #self.text(1,6,Color.text_accent + Color.bg_dark+'SW>'+current_tool_str)
                 #print('\33[2K\r'+Back.LIGHTBLACK_EX+Fore.BLACK+'A-T>'+current_tool_str+Fore.RESET+Back.RESET, end='') #\33[2K = erase line, \r = return to line beginning
                 try:
-                    user_input = input()
-                    #print(Cursor.UP(1)+"", end='')
                     input_words = user_input.split(" ")
                     for (short,long),tool in self.menu_tools.items():
                         if input_words[0].casefold() == short or input_words[0].casefold() == long:
@@ -100,6 +139,10 @@ class TerminalScreen(Screen):
             print("")
         #reset cursor position
         print(Cursor.POS(1,1)+"", end='')
+        
+        input_thread = threading.Thread(target=add_input, args=(self.input_queue,))
+        input_thread.daemon = True
+        input_thread.start()
 
     """Empty terminal view"""
     def clear(self,bg_color = Back.RESET, rect = None, ):
@@ -117,6 +160,13 @@ class TerminalScreen(Screen):
     """Empty terminal view"""
     def cursor_pos(self,x,y):
         print(Cursor.POS(x,y)+"", end='')
+
+
+
+def add_input(input_queue):
+    while True:
+        input_queue.put(input())
+        print(Cursor.UP(1)+"", end='')
 
 class Rect:
     x = 1
@@ -149,7 +199,7 @@ class HelpCommand:
     help = 'Displays context sensitive help.'
     def __call__(self,*args):
         if len(args)>0:
-            for (short,long),tool in menu_tools.items()|at_tools.items():
+            for (short,long),tool in self.menu_tools.items()|self.at_tools.items():
                 if args[0].casefold() == short or args[0].casefold() == long:
                     try:
                         print("\tcommand:\t"+tool.long)
@@ -161,14 +211,14 @@ class HelpCommand:
             return
 
         print("Commands available everywhere:")
-        for (short,long),tool in menu_tools.items():
+        for (short,long),tool in self.menu_tools.items():
             print('\t'+short+' - '+long+'\t',end='')
             try:
                 print(tool.help)
             except AttributeError:
                 print("")
         print("Tools:")
-        for (short,long),tool in at_tools.items():
+        for (short,long),tool in self.at_tools.items():
             print('\t'+short+' - '+long+'\t',end='')
             try:
                 print(tool.help)

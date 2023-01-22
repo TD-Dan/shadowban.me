@@ -1,6 +1,6 @@
 
 """Interface base class for all screen user interfaces."""
-class Screen:
+class WindowBase:
     program_name: str = 'Unnamed Program'
     program_version: str = 'v.0.0.1'
     def open(self): raise NotImplementedError('open method not implemented by subclass.')

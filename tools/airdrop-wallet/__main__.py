@@ -6,25 +6,25 @@ import pprint
 from iota_wallet import IotaWallet, StrongholdSecretManager
 from iota_client import IotaClient
 
-from screenterm import TerminalScreen
+from window.termwindow import TerminalWindow
 
 from tools.config import ConfigTool
 from tools.airdrop import AirdropTool
 
 
 def main():
-    scr = TerminalScreen()
+    mainwin = TerminalWindow()
 
-    scr.program_name = 'Shadow-wallet'
-    scr.program_version = 'v.0.1.1'
+    mainwin.program_name = 'Shadow-wallet'
+    mainwin.program_version = 'v.0.1.1'
 
     config_tool = ConfigTool()
     airdrop_tool = AirdropTool()
 
-    scr.add_tool(config_tool)
-    scr.add_tool(airdrop_tool)
+    mainwin.add_tool(config_tool)
+    mainwin.add_tool(airdrop_tool)
 
-    scr.open()
+    mainwin.open()
 
 
     # ## Setup client
