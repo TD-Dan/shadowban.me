@@ -6,152 +6,25 @@ import pprint
 from iota_wallet import IotaWallet, StrongholdSecretManager
 from iota_client import IotaClient
 
-from colorama import Fore, Back, Style, init, Cursor
-init(autoreset=True)
-
-menu_tools = {}
-at_tools = {}
-
-def add_menu_tool(tool: object):
-    menu_tools[(tool.short,tool.long)]=tool
-
-def add_tool(tool: object):
-    # Check that tool keywords are not used by menu level commands or other tool commands
-    for s,l in menu_tools | at_tools:
-        if tool.short == s:
-            raise ValueError("shorthand already in use by "+s+" "+l)
-        if tool.long == l:
-            raise ValueError("tool long keyword already in use by "+s+" "+l)
-    at_tools[(tool.short,tool.long)]=tool
+from screenterm import TerminalScreen
 
 from tools.config import ConfigTool
-add_tool(ConfigTool())
 from tools.airdrop import AirdropTool
-add_tool(AirdropTool())
 
-# Used to signal main loop continue
-class InputUsedContinueLoop(Exception): pass
 
 def main():
+    scr = TerminalScreen()
 
-    print(Back.WHITE + Fore.BLACK + ' AIRDROP TOOL v.0.1.1 ')
+    scr.program_name = 'Airdrop wallet'
+    scr.program_version = 'v.0.1.1'
 
-    print('\nType ' + Fore.LIGHTWHITE_EX + 'help' + Fore.RESET +' for available commands.\nUse Ctrl-C anytime to abort current command.\n')
+    config_tool = ConfigTool()
+    airdrop_tool = AirdropTool()
 
-    current_tool = None
+    scr.add_tool(config_tool)
+    scr.add_tool(airdrop_tool)
 
-    while True:
-        try:            
-            #print(Cursor.UP(1) + '\33[2K\rA-T>', end='') #\33[2K = erase line, \r = return to line beginning
-            print('                        ') #print empty line to avoid screen jumping
-            print(Cursor.UP(1)+"", end='')
-            current_tool_str = ""
-            if current_tool:
-                current_tool_str = Back.GREEN+current_tool.long+'>'+Back.RESET
-            print('\33[2K\r'+Back.LIGHTBLACK_EX+Fore.BLACK+'A-T>'+current_tool_str+Fore.RESET+Back.RESET, end='') #\33[2K = erase line, \r = return to line beginning
-            try:
-                user_input = input()
-                print(Cursor.UP(1)+"", end='')
-                input_words = user_input.split(" ")
-                for (short,long),tool in menu_tools.items():
-                    if input_words[0].casefold() == short or input_words[0].casefold() == long:
-                        print('\33[2K\r> '+long)
-                        menu_tools[(short,long)](*input_words[1:])
-                        raise InputUsedContinueLoop
-                if not current_tool:
-                    for (short,long),tool in at_tools.items():
-                        if input_words[0].casefold() == short or input_words[0].casefold() == long:
-                            current_tool = tool
-                            print('\33[2K\r>>> '+long)
-                            at_tools[(short,long)](*input_words[1:])
-                else:
-                    #reroute input to current tool
-                    current_tool(*input_words)
-            except InputUsedContinueLoop:
-                pass
-            except KeyboardInterrupt:
-                if current_tool:
-                    BackCommand()()
-                else:
-                    ExitCommand()()
-        except KeyboardInterrupt:
-            pass
-        except ProgramBack:
-            current_tool = None
-        except ProgramExit:
-            print(Fore.LIGHTBLACK_EX + 'Normal program exit')
-            exit()
-        except Exception as e:
-            print("Unhandled exception")
-            raise
-    
-
-class ProgramExit(Exception):
-    pass
-
-class ExitCommand:
-    short = 'x'
-    long = 'exit'
-    def __call__(self,*args):
-        if prompt_yes_no("Exit?"):
-            raise ProgramExit
-add_menu_tool(ExitCommand())
-
-
-class ProgramBack(Exception):
-    pass
-
-class BackCommand:
-    short = 'b'
-    long = 'back'
-    def __call__(self,*args):
-        raise ProgramBack
-add_menu_tool(BackCommand())
-
-class HelpCommand:
-    short = 'h'
-    long = 'help'
-    help = 'Displays context sensitive help.'
-    def __call__(self,*args):
-        if len(args)>0:
-            for (short,long),tool in menu_tools.items()|at_tools.items():
-                if args[0].casefold() == short or args[0].casefold() == long:
-                    try:
-                        print("\tcommand:\t"+tool.long)
-                        print("\tshortcut:\t"+tool.short)
-                        print(tool.help)
-                        print(tool.help_long)
-                    except AttributeError:
-                        pass
-            return
-
-        print("Commands available everywhere:")
-        for (short,long),tool in menu_tools.items():
-            print('\t'+short+' - '+long+'\t',end='')
-            try:
-                print(tool.help)
-            except AttributeError:
-                print("")
-        print("Tools:")
-        for (short,long),tool in at_tools.items():
-            print('\t'+short+' - '+long+'\t',end='')
-            try:
-                print(tool.help)
-            except AttributeError:
-                print("")
-        print("\nUse help <tool> for more help.\n")
-add_menu_tool(HelpCommand())
-
-
-"""Prompts an yes or no input from user."""
-def prompt_yes_no(prompt: str) -> bool:
-    print(prompt+ "(y/n) > ", end='')
-    user_input = input()
-    print(Cursor.UP(1), end='')
-    match user_input: 
-        case 'Y'|'y'|'Yes'|'yes':
-            return True
-    return False
+    scr.open()
 
 
     # ## Setup client
