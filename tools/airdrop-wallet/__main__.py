@@ -25,9 +25,7 @@ program_dom = [
 def main():
     mainwin : termwindow.TerminalWindow = termwindow.TerminalWindow('Shadow-wallet')
     mainwin += program_dom
-
-    print(mainwin.sub_sections)
-    
+   
     config_tool = ConfigTool()
     airdrop_tool = AirdropTool()
 

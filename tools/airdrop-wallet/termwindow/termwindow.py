@@ -7,6 +7,8 @@ from queue import Queue
 from colorama import Fore, Back, Style, init, Cursor
 init(autoreset=True)
 
+from termwindow.getch import getch
+
 #from shadowui.windowbase import WindowBase
 #from shadowui.section import Section
 import shadowui
@@ -92,14 +94,17 @@ class TerminalWindow(shadowui.WindowBase):
                 #     last_update = time.time()
 
                 if not self.input_queue.empty():
-                    user_input=self.input_queue.get()
+                    k = self.input_queue.get()
+                    print('\n'+k+'\n'+str(bytes(k,'utf-8')))
+                    if k == '\x03':
+                        raise KeyboardInterrupt
+                    user_input+=k
 
                 current_tool_str = ""
                 if current_tool:
                     current_tool_str = current_tool.long+'>'
-                #self.clear(Color.bg_dark, Rect(1,6,80,1))
-                #self.text(1,6,Color.text_accent + Color.bg_dark+'SW>'+current_tool_str)
-                #print('\33[2K\r'+Back.LIGHTBLACK_EX+Fore.BLACK+'A-T>'+current_tool_str+Fore.RESET+Back.RESET, end='') #\33[2K = erase line, \r = return to line beginning
+                self.clear(Color.bg_dark, Rect(1,6,80,1))
+                self.text(1,6,Color.text_accent + Color.bg_dark+'SW>'+current_tool_str+user_input)
                 try:
                     input_words = user_input.split(" ")
                     for (short,long),tool in self.menu_tools.items():
@@ -123,8 +128,8 @@ class TerminalWindow(shadowui.WindowBase):
                         BackCommand()()
                     else:
                         ExitCommand()()
-            except KeyboardInterrupt:
-                pass
+            #except KeyboardInterrupt:
+            #    pass
             except ProgramBack:
                 current_tool = None
             except ProgramExit:
@@ -170,8 +175,9 @@ class TerminalWindow(shadowui.WindowBase):
 
 def add_input(input_queue):
     while True:
-        input_queue.put(input())
-        print(Cursor.UP(1)+"", end='')
+        k = getch()
+        if k:
+            input_queue.put(k)
 
 class Rect:
     x = 1
