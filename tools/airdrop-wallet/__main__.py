@@ -2,27 +2,38 @@
 from iota_wallet import IotaWallet, StrongholdSecretManager
 from iota_client import IotaClient
 
-#from window.termwindow import TerminalWindow
-import shadowui
+from shadowui import Section,Input,Label
 import termwindow
 
 from tools.config import ConfigTool
 from tools.airdrop import AirdropTool
 
+def prompt_input(value):
+    print("I'v got input: "+value)
+
+program_dom = [
+    Section('header',[
+        Section('status'),
+        Section('logo')
+        ]),
+    Input('prompt', on_value_changed=prompt_input),
+    Section('menu'),
+    Section('content'),
+    Section('footer',[Label('hintline')])
+]
 
 def main():
-    mainwin = termwindow.TerminalWindow()
+    mainwin : termwindow.TerminalWindow = termwindow.TerminalWindow('Shadow-wallet')
+    mainwin += program_dom
 
-    mainwin.name = 'Shadow-wallet'
-
+    print(mainwin.sub_sections)
+    
     config_tool = ConfigTool()
     airdrop_tool = AirdropTool()
 
     mainwin.add_tool(config_tool)
     mainwin.add_tool(airdrop_tool)
 
-    header = shadowui.Section()
-    mainwin.sections.append(header)
     mainwin.open()
 
 

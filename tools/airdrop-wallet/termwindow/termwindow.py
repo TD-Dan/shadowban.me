@@ -39,6 +39,9 @@ class TerminalWindow(shadowui.WindowBase):
     menu_tools = {}
     at_tools = {}
 
+    def __init__(self, name: str, sub_sections: list = None) -> None:
+        super().__init__(name, sub_sections)
+    
     def add_menu_tool(self, tool: object):
         self.menu_tools[(tool.short,tool.long)]=tool
 
@@ -54,6 +57,7 @@ class TerminalWindow(shadowui.WindowBase):
     def open(self):
         self.init()
         self.clear()
+
         self.clear(Color.bg_dark, Rect(1,1,80,1))
         self.clear(Color.bg_medium, Rect(1,2,80,4))
 
